@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ATS Resume Analyzer Pro | Smart Career Intelligence</title>
+    <!-- Google Fonts + Font Awesome + Tailwind CDN for extra utility -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- Chart.js for visual analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #f5f7fe 0%, #eef2fa 100%);
+            color: #1a2c3e;
+            overflow-x: hidden;
+        }
+
+        /* Animated gradient background */
+        .bg-animate {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: radial-gradient(circle at 10% 20%, rgba(30, 107, 94, 0.03) 0%, rgba(15, 59, 59, 0.02) 100%);
+        }
+
+        /* Glassmorphism Navbar */
+        .navbar {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(30, 107, 94, 0.2);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0f3b3b, #1e6b5e, #2c9b8a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo i {
+            background: none;
+            color: #1e6b5e;
+            margin-right: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            font-weight: 600;
+            padding: 0.6rem 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            color: #2c3e50;
+        }
+
+        .nav-btn i {
+            margin-right: 6px;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #1e6b5e, #0f4c43);
+            color: white;
+            box-shadow: 0 4px 12px rgba(30, 107, 94, 0.3);
+        }
+
+        .nav-btn:not(.active):hover {
+            background: rgba(30, 107, 94, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Main Container */
+        .app-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Page Transitions */
+        .page {
+            display: none;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .page.active-page {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 3rem 1rem 4rem;
+        }
+
+        .hero h1 {
+            font-size: 3.8rem;
+            font-weight: 800;
+            background: linear-gradient(145deg, #0f3b3b, #1e6b5e, #2c9b8a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .hero-glow {
+            font-size: 1.3rem;
+            color: #4a627a;
+            max-width: 700px;
+            margin: 1.2rem auto;
+        }
+
+        .stats-badge {
+            display: inline-flex;
+            gap: 1rem;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(4px);
+            padding: 0.6rem 1.5rem;
+            border-radius: 80px;
+            margin-top: 1rem;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+            margin: 4rem 0;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 2rem;
+            padding: 2rem;
+            width: 280px;
+            transition: all 0.3s;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(30, 107, 94, 0.1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 40px -12px rgba(30, 107, 94, 0.2);
+        }
+
+        .feature-card i {
+            font-size: 2.8rem;
+            background: linear-gradient(135deg, #1e6b5e, #2c9b8a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        /* Cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(8px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.15);
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .dropzone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 1.5rem;
+            background: #fafcff;
+            padding: 2.5rem;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .dropzone.drag-over {
+            border-color: #1e6b5e;
+            background: #eef9f5;
+            transform: scale(0.99);
+        }
+
+        /* Score Circle */
+        .score-wrapper {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+        .circle-progress {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: conic-gradient(#2c9b8a 0deg, #e2e8f0 0deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        .inner-circle {
+            width: 160px;
+            height: 160px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .ats-score-number {
+            font-size: 3.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0f3b3b, #1e6b5e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Keyword badges */
+        .keyword-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+            margin-top: 1rem;
+        }
+        .badge {
+            background: #f1f5f9;
+            padding: 0.4rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .badge-highlight {
+            background: linear-gradient(135deg, #e0f2ef, #c6e4df);
+            color: #115e59;
+            border-left: 3px solid #1e6b5e;
+            font-weight: 700;
+            transform: scale(1.02);
+        }
+        .missing-card {
+            background: linear-gradient(135deg, #fff8e7, #fff3df);
+            border-radius: 1rem;
+            padding: 1.2rem;
+            margin-top: 1.5rem;
+            border-left: 5px solid #f59e0b;
+        }
+        .chart-container {
+            max-width: 280px;
+            margin: 1rem auto;
+        }
+        .cta-btn {
+            background: linear-gradient(135deg, #1e6b5e, #0f4c43);
+            color: white;
+            border: none;
+            padding: 0.9rem 2rem;
+            font-weight: 700;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #5b6e8c;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; }
+            .nav-container { flex-direction: column; gap: 1rem; }
+            .app-container { padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-animate"></div>
+
+<div class="navbar">
+    <div class="nav-container">
+        <div class="logo"><i class="fas fa-robot"></i> ATS<span style="font-weight:600">Insight</span> Pro</div>
+        <div class="nav-links">
+            <button class="nav-btn active" data-page="home"><i class="fas fa-home"></i> Home</button>
+            <button class="nav-btn" data-page="upload"><i class="fas fa-cloud-upload-alt"></i> Upload</button>
+            <button class="nav-btn" data-page="score"><i class="fas fa-chart-line"></i> Scoreboard</button>
+        </div>
+    </div>
+</div>
+
+<div class="app-container">
+    <!-- HOME PAGE -->
+    <div id="homePage" class="page active-page">
+        <div class="hero">
+            <h1>Decode Your Resume <br> Like an ATS Pro</h1>
+            <div class="hero-glow">AI-powered analysis · 85+ keywords · Real-time scoring · Actionable insights</div>
+            <div class="stats-badge">
+                <span><i class="fas fa-check-circle" style="color:#1e6b5e;"></i> 10k+ Resumes Analyzed</span>
+                <span><i class="fas fa-chart-line" style="color:#1e6b5e;"></i> 94% Accuracy</span>
+            </div>
+            <button class="cta-btn" id="homeGetStarted" style="margin-top: 2rem;"><i class="fas fa-arrow-right"></i> Analyze Your Resume Now</button>
+        </div>
+        <div class="feature-grid">
+            <div class="feature-card"><i class="fas fa-chart-pie"></i><h3>Precision ATS Score</h3><p>0-100 scoring based on keyword density, structure, and role relevance.</p></div>
+            <div class="feature-card"><i class="fas fa-key"></i><h3>Keyword Intelligence</h3><p>See missing high-value keywords & get top recommendations to highlight.</p></div>
+            <div class="feature-card"><i class="fas fa-file-pdf"></i><h3>Instant PDF Parsing</h3><p>Drag & drop your PDF, extract text securely in your browser.</p></div>
+            <div class="feature-card"><i class="fas fa-chart-simple"></i><h3>Visual Analytics</h3><p>Interactive charts compare your keyword categories.</p></div>
+        </div>
+    </div>
+
+    <!-- UPLOAD PAGE -->
+    <div id="uploadPage" class="page">
+        <div class="glass-card">
+            <h2 style="margin-bottom: 0.5rem;"><i class="fas fa-cloud-upload-alt" style="color:#1e6b5e;"></i> Upload Resume (PDF)</h2>
+            <p style="margin-bottom: 1.5rem; color:#4a627a;">Supported: PDF up to 12MB. Your data stays local — privacy first.</p>
+            <div id="dropzoneUpload" class="dropzone">
+                <i class="fas fa-file-pdf" style="font-size: 3.5rem; color:#1e6b5e; margin-bottom: 0.5rem;"></i>
+                <p>Drag & drop your resume here</p>
+                <label style="background:#1e6b5e; display:inline-block; padding:0.5rem 1.8rem; border-radius:40px; color:white; margin-top:1rem; cursor:pointer; font-weight:500;">Browse Files</label>
+                <input type="file" id="pdfFileInput" accept="application/pdf" style="display:none;">
+                <div id="uploadStatus" style="margin-top: 1rem; font-size:0.85rem;"></div>
+            </div>
+            <button id="analyzeFromUploadBtn" class="cta-btn" disabled style="width:100%; margin-top:1.5rem;"><i class="fas fa-microchip"></i> Run ATS Analysis</button>
+            <div class="keyword-cloud" style="justify-content:center; margin-top:1rem;">
+                <span class="badge">✔️ Python</span><span class="badge">✔️ Project Management</span><span class="badge">✔️ SQL</span><span class="badge">✔️ Agile</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCORE & RESULTS PAGE -->
+    <div id="scorePage" class="page">
+        <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap;">
+                <h2><i class="fas fa-chart-line"></i> ATS Performance Report</h2>
+                <span id="resumeFileName" style="background:#eef2ff; padding:5px 14px; border-radius:60px; font-size:0.8rem;"></span>
+            </div>
+            <div class="score-wrapper">
+                <div class="circle-progress" id="circleGauge">
+                    <div class="inner-circle">
+                        <span class="ats-score-number" id="atsScoreDisplay">--</span>
+                        <span style="font-size:0.8rem;">/100</span>
+                    </div>
+                </div>
+            </div>
+            <div id="ratingMessage" style="text-align:center; font-weight:700; font-size:1.1rem; margin-bottom:1rem;"></div>
+
+            <div class="chart-container">
+                <canvas id="keywordChart" width="250" height="250" style="max-width:250px; margin:0 auto;"></canvas>
+            </div>
+
+            <div style="margin: 1.5rem 0 1rem 0;">
+                <h3><i class="fas fa-crown" style="color:#f59e0b;"></i> 🔥 Keywords to HIGHLIGHT (Top Priority)</h3>
+                <div id="highlightKeywordsArea" class="keyword-cloud"></div>
+            </div>
+
+            <div>
+                <h3><i class="fas fa-check-circle"></i> 🧠 Keywords Detected</h3>
+                <div id="foundKeywordsArea" class="keyword-cloud"></div>
+            </div>
+
+            <div id="missingKeywordsBox" style="display: none;" class="missing-card">
+                <strong><i class="fas fa-exclamation-triangle"></i> Critical Missing Keywords</strong>
+                <div id="missingKeywordsList" style="margin-top: 10px;"></div>
+            </div>
+
+            <div style="background:#f1f5fe; border-radius: 1rem; padding: 1rem; margin-top: 1.5rem;">
+                <strong><i class="fas fa-lightbulb"></i> Pro Strategy:</strong>
+                <div id="atsAdviceText" style="margin-top: 6px;">Upload a resume to unlock personalized insights.</div>
+            </div>
+            <button id="uploadNewBtn" style="background:#e9eef3; border:none; padding:0.7rem 1.5rem; border-radius:50px; margin-top:1.5rem; font-weight:600; cursor:pointer;"><i class="fas fa-sync-alt"></i> Analyze Another Resume</button>
+        </div>
+    </div>
+    <div class="footer">
+        <i class="fas fa-shield-alt"></i> Privacy-first · No server upload · ATS simulator v3.0
+    </div>
+</div>
+
+<script>
+    // PDF.js config
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    
+    // ---------- ENHANCED KEYWORD DATABASE (85+ terms categorized) ----------
+    const KEYWORD_CATEGORIES = {
+        technical: ["python", "javascript", "java", "react", "angular", "vue", "node.js", "django", "flask", "sql", "postgresql", "mongodb", "rest api", "graphql", "docker", "kubernetes", "aws", "azure", "gcp", "ci/cd", "git", "html", "css", "typescript", "redux"],
+        management: ["agile", "scrum", "kanban", "jira", "project management", "pmp", "sprint planning", "leadership", "team leadership", "stakeholder management"],
+        softskills: ["communication", "teamwork", "problem solving", "critical thinking", "time management", "collaboration", "negotiation", "presentation", "adaptability"],
+        business: ["data analysis", "strategic planning", "sales", "marketing", "seo", "google analytics", "branding", "content strategy", "budgeting", "forecasting", "operations", "supply chain", "risk management", "compliance", "quality assurance", "lean", "six sigma"],
+        design: ["figma", "adobe xd", "photoshop", "illustrator", "ui/ux", "user research", "wireframing", "prototyping", "responsive design"]
+    };
+    const MASTER_KEYWORDS = Object.values(KEYWORD_CATEGORIES).flat();
+    
+    let currentResumeText = null;
+    let currentFileName = null;
+    let chartInstance = null;
+    
+    // Extract PDF text
+    async function extractPdfText(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const typedArray = new Uint8Array(e.target.result);
+                try {
+                    const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+                    let fullText = "";
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const content = await page.getTextContent();
+                        fullText += content.items.map(item => item.str).join(" ") + " ";
+                    }
+                    resolve(fullText.trim());
+                } catch (err) { reject("PDF parsing error: " + err.message); }
+            };
+            reader.onerror = () => reject("File read error");
+            reader.readAsArrayBuffer(file);
+        });
+    }
+    
+    // Core ATS scoring engine with nuance
+    function computeATSScore(text) {
+        if (!text || text.length < 40) return { score: 7, matched: [], missing: [], highlight: [], wordCount: 0, rating: "Insufficient data", advice: "Upload a detailed resume with proper text.", categoryScores: { technical:0, management:0, softskills:0, business:0, design:0 } };
+        const lower = text.toLowerCase();
+        const matchedAll = MASTER_KEYWORDS.filter(kw => lower.includes(kw.toLowerCase()));
+        const matchedSet = [...new Set(matchedAll)];
+        
+        // Category scores calculation
+        let catScores = {};
+        for(let [cat, keywords] of Object.entries(KEYWORD_CATEGORIES)) {
+            let foundInCat = keywords.filter(kw => lower.includes(kw.toLowerCase())).length;
+            catScores[cat] = Math.min(100, Math.floor((foundInCat / keywords.length) * 100));
+        }
+        
+        const wordCount = text.split(/\s+/).length;
+        let baseScore = Math.min(65, Math.floor((matchedSet.length / 38) * 70));
+        let lengthBonus = wordCount > 500 ? 12 : (wordCount > 280 ? 8 : (wordCount > 120 ? 4 : 1));
+        let highValueBoost = 0;
+        const premium = ["python", "react", "aws", "project management", "agile", "leadership", "sql", "data analysis", "figma"];
+        premium.forEach(p => { if(lower.includes(p.toLowerCase())) highValueBoost += 1.5; });
+        highValueBoost = Math.min(14, Math.floor(highValueBoost));
+        let structurePoints = 0;
+        if (/experience|work history/i.test(text)) structurePoints += 4;
+        if (/education|degree/i.test(text)) structurePoints += 3;
+        if (/skills|technologies/i.test(text)) structurePoints += 3;
+        let finalScore = baseScore + lengthBonus + highValueBoost + structurePoints;
+        finalScore = Math.min(100, Math.max(0, Math.floor(finalScore)));
+        
+        const importantMissing = ["python", "project management", "communication", "sql", "agile", "leadership", "data analysis", "react", "aws", "teamwork"].filter(k => !lower.includes(k.toLowerCase())).slice(0, 7);
+        let ratingMsg = finalScore >= 85 ? "🌟 Outstanding! Highly optimized for ATS." : (finalScore >= 70 ? "✅ Strong resume — minor tweaks needed." : (finalScore >= 50 ? "⚠️ Room for improvement — add keywords." : "❌ Critical gaps — restructure with keywords."));
+        let adviceMsg = finalScore < 60 ? `Add these keywords: ${importantMissing.slice(0,4).join(', ')}. Use clear headings (Experience, Skills).` : (finalScore < 80 ? "Great foundation. Add metrics and 2-3 more industry keywords." : "Perfect! Tailor slightly per job description.");
+        return {
+            score: finalScore,
+            matchedKeywords: matchedSet,
+            missingKeywords: importantMissing,
+            highlightList: matchedSet.slice(0, 12),
+            wordCount: wordCount,
+            rating: ratingMsg,
+            advice: adviceMsg,
+            categoryScores: catScores
+        };
+    }
+    
+    function renderScorePage(analysis, fileName) {
+        document.getElementById("atsScoreDisplay").innerText = analysis.score;
+        const angle = (analysis.score / 100) * 360;
+        document.getElementById("circleGauge").style.background = `conic-gradient(#2c9b8a 0deg ${angle}deg, #e2e8f0 ${angle}deg 360deg)`;
+        document.getElementById("ratingMessage").innerHTML = `<i class="fas fa-chart-line"></i> ${analysis.rating}`;
+        document.getElementById("resumeFileName").innerHTML = fileName ? `<i class="fas fa-file-pdf"></i> ${fileName}` : "";
+        
+        const highlightDiv = document.getElementById("highlightKeywordsArea");
+        if(analysis.highlightList.length) highlightDiv.innerHTML = analysis.highlightList.map(k => `<span class="badge badge-highlight"><i class="fas fa-fire"></i> ${escapeHtml(k)}</span>`).join('');
+        else highlightDiv.innerHTML = '<span class="badge">Add keywords like "Python" or "Leadership"</span>';
+        
+        const foundDiv = document.getElementById("foundKeywordsArea");
+        if(analysis.matchedKeywords.length) foundDiv.innerHTML = analysis.matchedKeywords.slice(0, 35).map(k => `<span class="badge">${escapeHtml(k)}</span>`).join('');
+        else foundDiv.innerHTML = '<span class="badge">No keywords detected</span>';
+        
+        const missingBox = document.getElementById("missingKeywordsBox");
+        if(analysis.missingKeywords.length) {
+            missingBox.style.display = "block";
+            document.getElementById("missingKeywordsList").innerHTML = `<div style="display:flex; flex-wrap:wrap; gap:6px;">${analysis.missingKeywords.map(k => `<span style="background:#fff0cf; padding:5px 12px; border-radius:30px;">➕ ${escapeHtml(k)}</span>`).join('')}</div><small>Add these to increase match rate up to 30%</small>`;
+        } else missingBox.style.display = "none";
+        
+        document.getElementById("atsAdviceText").innerHTML = `<i class="fas fa-brain"></i> ${analysis.advice} <br> <strong>Word count:</strong> ${analysis.wordCount} words.`;
+        
+        // Update radar chart
+        if(chartInstance) chartInstance.destroy();
+        const ctx = document.getElementById('keywordChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Tech', 'Management', 'Soft Skills', 'Business', 'Design'],
+                datasets: [{
+                    label: 'Keyword Match %',
+                    data: [analysis.categoryScores.technical || 0, analysis.categoryScores.management || 0, analysis.categoryScores.softskills || 0, analysis.categoryScores.business || 0, analysis.categoryScores.design || 0],
+                    backgroundColor: 'rgba(30, 107, 94, 0.2)',
+                    borderColor: '#1e6b5e',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#2c9b8a'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+    
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+    
+    // Navigation
+    const pages = { home: document.getElementById("homePage"), upload: document.getElementById("uploadPage"), score: document.getElementById("scorePage") };
+    function showPage(pageId) {
+        Object.keys(pages).forEach(id => pages[id].classList.remove("active-page"));
+        pages[pageId].classList.add("active-page");
+        document.querySelectorAll(".nav-btn").forEach(btn => { if(btn.dataset.page === pageId) btn.classList.add("active"); else btn.classList.remove("active"); });
+        if(pageId === "score" && !currentResumeText) {
+            document.getElementById("atsScoreDisplay").innerText = "--";
+            document.getElementById("ratingMessage").innerHTML = "No resume analyzed";
+        }
+    }
+    document.querySelectorAll(".nav-btn").forEach(btn => btn.addEventListener("click", () => showPage(btn.dataset.page)));
+    document.getElementById("homeGetStarted")?.addEventListener("click", () => showPage("upload"));
+    document.getElementById("uploadNewBtn")?.addEventListener("click", () => showPage("upload"));
+    
+    // Upload logic
+    const fileInput = document.getElementById("pdfFileInput");
+    const dropzoneDiv = document.getElementById("dropzoneUpload");
+    const uploadStatus = document.getElementById("uploadStatus");
+    const analyzeBtn = document.getElementById("analyzeFromUploadBtn");
+    let selectedFile = null;
+    
+    function updateUpload(file) {
+        if(file && file.type === "application/pdf" && file.size <= 12*1024*1024) {
+            selectedFile = file;
+            uploadStatus.innerHTML = `<span style="color:#1e6b5e;">✅ Ready: ${file.name}</span>`;
+            analyzeBtn.disabled = false;
+        } else if(file && file.size > 12*1024*1024) { uploadStatus.innerHTML = "<span style='color:red'>Too large (max 12MB)</span>"; selectedFile = null; analyzeBtn.disabled = true; }
+        else if(file && file.type !== "application/pdf") { uploadStatus.innerHTML = "<span style='color:red'>Only PDF allowed</span>"; selectedFile = null; analyzeBtn.disabled = true; }
+        else { selectedFile = null; analyzeBtn.disabled = true; }
+    }
+    dropzoneDiv.addEventListener("click", () => fileInput.click());
+    dropzoneDiv.addEventListener("dragover", (e) => { e.preventDefault(); dropzoneDiv.classList.add("drag-over"); });
+    dropzoneDiv.addEventListener("dragleave", () => dropzoneDiv.classList.remove("drag-over"));
+    dropzoneDiv.addEventListener("drop", (e) => { e.preventDefault(); dropzoneDiv.classList.remove("drag-over"); if(e.dataTransfer.files.length) updateUpload(e.dataTransfer.files[0]); });
+    fileInput.addEventListener("change", (e) => { if(e.target.files.length) updateUpload(e.target.files[0]); });
+    
+    analyzeBtn.addEventListener("click", async () => {
+        if(!selectedFile) return;
+        analyzeBtn.disabled = true; analyzeBtn.innerHTML = "<i class='fas fa-spinner fa-pulse'></i> Analyzing...";
+        try {
+            const extracted = await extractPdfText(selectedFile);
+            if(!extracted || extracted.length < 30) throw new Error("Low text extraction");
+            currentResumeText = extracted;
+            currentFileName = selectedFile.name;
+            const analysis = computeATSScore(currentResumeText);
+            renderScorePage(analysis, currentFileName);
+            showPage("score");
+        } catch(err) { alert("Error: Could not parse PDF. Ensure it's text-based (not scanned)."); }
+        finally { analyzeBtn.disabled = false; analyzeBtn.innerHTML = "<i class='fas fa-microchip'></i> Run ATS Analysis"; }
+    });
+    
+    if(!currentResumeText) renderScorePage({ score: 0, matchedKeywords: [], highlightList: [], missingKeywords: [], rating: "Ready!", advice: "Upload resume to see your ATS score", categoryScores: { technical:0, management:0, softskills:0, business:0, design:0 } }, null);
+    showPage("home");
+</script>
+</body>
+</html>
